@@ -1,0 +1,10 @@
+#!/bin/sh
+
+length=$(shuf -i 1-200 -n 1)
+randomtext=$(base64 /dev/urandom | head -c $length)
+pointsize=50
+angle=$(($(shuf -i 0-90 -n 1)-45))
+
+convert -size 500x -pointsize $pointsize caption:"$randomtext" -rotate $angle -bordercolor white -border 50 test.jpg
+
+

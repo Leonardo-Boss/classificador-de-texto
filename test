@@ -1,0 +1,24 @@
+#!/bin/sh
+if [ "$#" -eq "0" ]; then
+    set -- $(find ./data -type f | shuf -n 1)
+fi
+
+for file in $@; do
+    ./outline $file
+    cp $file ./og.jpg
+    echo
+    echo ------ FILE ------ 
+    echo $file
+    echo ------ FINAL ------ 
+    tesseract ./final.jpg -  --psm 11
+    echo ------ ERODED ------ 
+    tesseract ./eroded.jpg -  --psm 11
+    echo ------ FLOOD ------ 
+    tesseract ./flood.jpg -  --psm 11
+    echo ------ ONLY TEXT ------ 
+    tesseract ./only_text.jpg -  --psm 11
+    echo ------ ONLY TEXT COLOR ------ 
+    tesseract ./only_text_color.jpg - --psm 11
+    echo ------ OG ------ 
+    tesseract $file -  --psm 11
+done

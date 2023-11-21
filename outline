@@ -1,0 +1,121 @@
+#!/bin/python3
+from sys import argv
+import numpy as np
+import cv2 as cv
+import csv
+
+def make_csv(contours):
+    with open('contour-data.csv', 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(("aspect_ratio", "extent", "solidity", "equi_diameter", "angle"))
+        data_extractor = (get_data(contour) for contour in contours)
+        writer.writerows(data_extractor)
+
+def weird_division(n, d):
+    return n / d if d else 0
+
+def get_data(cnt):
+    x,y,w,h = cv.boundingRect(cnt)
+    aspect_ratio = weird_division(float(w), h)
+    area = cv.contourArea(cnt)
+    rect_area = w*h
+    extent = weird_division(float(area), rect_area)
+    hull = cv.convexHull(cnt)
+    hull_area = cv.contourArea(hull)
+    solidity = weird_division(float(area), hull_area)
+    equi_diameter = np.sqrt(weird_division(4*area, np.pi))
+    (x,y),(MA,ma),angle = cv.fitEllipse(cnt) if len(cnt) > 4 else ((None, None), (None, None), None)
+    return (aspect_ratio, extent, solidity, equi_diameter, angle)
+
+
+def read(image_path):
+    image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
+    image_color = cv.imread(image_path, cv.IMREAD_COLOR)
+    return (image, image_color)
+
+def blur(image):
+    img_blur = cv.GaussianBlur(image, (9,9), 0)
+    return img_blur
+
+def canny(image):
+    med_val = np.median(image) 
+    lower = int(max(0 ,0.9*med_val))
+    upper = 240
+    edge = cv.Canny(image=image, threshold1=lower,threshold2=upper)
+    in_edge = cv.bitwise_not(edge)
+    return (edge, in_edge)
+
+def extreme_dilate(image):
+    kernel = np.ones((20,20),np.uint8)
+    dilation = cv.dilate(image, kernel, iterations=1)
+    return dilation
+
+def erode(image):
+    kernel = np.ones((3,3),np.uint8)
+    eroded = cv.erode(image, kernel, iterations=1)
+    return eroded
+
+def flood(image):
+    im_floodfill = image.copy()
+    h, w = image.shape[:2]
+    mask = np.zeros((h+2, w+2), np.uint8)
+    cv.floodFill(im_floodfill, mask, (0,0), (0,0,255));
+    im_floodfill = cv.bitwise_not(im_floodfill)
+    cv.imwrite('flood.jpg', im_floodfill)
+    return im_floodfill
+
+# create white canvas
+def contour(image):
+    height, width = image.shape[:2]
+    blank_image = np.zeros((height,width,1), np.uint8)
+    blank_image.fill(255)
+
+    contours, hierarchy = cv.findContours(image, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+    make_csv(contours)
+    no_child_contours = tuple(contours[i] for i, h in enumerate(hierarchy[0]) if h[2] == -1) # remove all parent contours
+    im_in = cv.drawContours(blank_image, contours, -1, (0, 0, 0), 1)
+    cv.imwrite('final.jpg', im_in)
+    return im_in
+
+def get_only_text(image, mask, isdark):
+    only_text= cv.bitwise_and(image, image, mask=mask)
+    if isdark:
+        #image dark
+        only_text = cv.bitwise_not(only_text)
+    else:
+        mask = cv.bitwise_not(mask)
+        only_text = cv.bitwise_not(only_text, only_text, mask=mask)
+    return only_text
+
+if __name__ == "__main__":
+    if len(argv) != 2:
+        print('expected path to image')
+        exit(-1)
+    image_path = argv[1]
+
+    image, image_color = read(image_path)
+    w, h = image.shape[:2]
+    if cv.countNonZero(image) < ((w*h)//3):
+        print('image dark')
+        isdark = True
+    else:
+        print('image white')
+        isdark = False
+
+    im_blur = blur(image)
+    canny, in_edge = canny(im_blur)
+    cv.imwrite('edge.jpg', in_edge)
+
+    e = extreme_dilate(canny)
+    only_text = get_only_text(image, e, isdark)
+    only_text_color = get_only_text(image_color, e, isdark)
+    cv.imwrite('only_text.jpg', only_text)
+    cv.imwrite('only_text_color.jpg', only_text_color)
+
+    image = erode(in_edge)
+    cv.imwrite('eroded.jpg', image)
+    flood_image = flood(image)
+    image = contour(image)
+
+
+    # 10zxvaa
