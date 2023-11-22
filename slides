@@ -1,0 +1,63 @@
+Classificador de Contornos de Textos
+
+Leonardo Boss
+Abayomi Lukman da Silva
+Vinícius Ribeiro de Souza
+
+@xkcd_machine_learning.png
+
+Atributos
+
+aspect_ratio
+
+@images/boundingrect.png
+
+extent
+
+@images/boundingrect.png
+
+solidity
+
+@images/convexitydefects.jpg
+
+equi_diameter
+
+angle
+
+@images/fitline.jpg
+
+defect_height
+
+@images/convexitydefects.jpg
+
+defect_rel_position
+
+@images/convexitydefects.jpg
+
+circleness
+
+@images/convexitydefects.jpg
+
+hull_circleness
+
+@images/convexitydefects.jpg
+
+78 imagens sem textos
+
+@xkcd_machine_learning.png
+
+@xkcd_machine_learning_without_text.png
+
+@canny.jpg
+
+@contour.jpg
+
+432 imagens de textos
+
+@text/AvantGarde-Book.jpg
+
+@text_tilted/DejaVu-Serif-Condensed.jpg
+
+Tarefa Classificação
+
+Contornos de Textos
